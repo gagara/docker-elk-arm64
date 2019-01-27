@@ -62,13 +62,14 @@ FROM centos:7
 
 ENV ELASTIC_CONTAINER true
 
-RUN curl -sL https://github.com/bell-sw/Liberica/releases/download/11.0.2/bellsoft-jdk11.0.2-linux-aarch64.tar.gz | tar -C /opt -zxf -
-ENV JAVA_HOME /opt/jdk-11.0.2
+ENV JAVA_HOME /usr/lib/jvm/jre-1.8.0-openjdk
+
+RUN yum install -y java-1.8.0-openjdk-headless
 
 # Replace OpenJDK's built-in CA certificate keystore with the one from the OS
 # vendor. The latter is superior in several ways.
 # REF: https://github.com/elastic/elasticsearch-docker/issues/171
-RUN ln -sf /etc/pki/ca-trust/extracted/java/cacerts /opt/jdk-11.0.2/lib/security/cacerts
+RUN ln -sf /etc/pki/ca-trust/extracted/java/cacerts /usr/lib/jvm/jre-1.8.0-openjdk/lib/security/cacerts
 
 RUN yum update -y && \
     yum install -y nc unzip wget which && \
