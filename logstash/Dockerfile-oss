@@ -1,3 +1,13 @@
+FROM golang:1.8 AS prep_env2yaml
+
+ADD env2yaml/env2yaml.go .
+
+RUN go get gopkg.in/yaml.v2 && \
+    mkdir env2yaml && \
+    mv env2yaml.go env2yaml/ && \
+    cd env2yaml/ && \
+    go build
+
 # This Dockerfile was generated from templates/Dockerfile.j2
 FROM centos:7
 
@@ -44,7 +54,7 @@ RUN chmod 0755 /usr/local/bin/docker-entrypoint
 
 USER 1000
 
-ADD env2yaml/env2yaml /usr/local/bin/
+COPY --from=prep_env2yaml --chown=1000:0 /go/env2yaml/env2yaml /usr/local/bin/
 
 EXPOSE 9600 5044
 

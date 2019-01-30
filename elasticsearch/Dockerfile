@@ -16,7 +16,7 @@ FROM centos:7 AS prep_files
 ENV PATH /usr/share/elasticsearch/bin:$PATH
 ENV JAVA_HOME /opt/jdk-11.0.1
 
-RUN curl -s https://download.java.net/java/GA/jdk11/13/GPL/openjdk-11.0.1_linux-x64_bin.tar.gz | tar -C /opt -zxf -
+RUN curl -sL https://github.com/bell-sw/Liberica/releases/download/11.0.1/bellsoft-jdk11.0.1-linux-aarch64.tar.gz | tar -C /opt -zxf -
 
 # Replace OpenJDK's built-in CA certificate keystore with the one from the OS
 # vendor. The latter is superior in several ways.
@@ -38,6 +38,9 @@ RUN mkdir -p config data logs
 RUN chmod 0775 config data logs
 COPY elasticsearch.yml log4j2.properties config/
 
+# remove unsupported JVM opts in ARM64
+RUN mv config/jvm.options config/jvm.options.orig && \
+    cat config/jvm.options.orig | sed -e 's/\(.*UseAVX=.*\)/#\1/' > config/jvm.options
 
 ################################################################################
 # Build stage 1 (the actual elasticsearch image):

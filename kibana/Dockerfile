@@ -15,6 +15,10 @@ RUN tar --strip-components=1 -zxf /opt/kibana-oss-6.6.0.tar.gz
 RUN chmod -R g=u /usr/share/kibana
 RUN find /usr/share/kibana -type d -exec chmod g+s {} \;
 
+# replace amd64 node with arm64
+RUN rm -rf /usr/share/kibana/node/* && \
+    curl -sL https://nodejs.org/dist/v10.14.1/node-v10.14.1-linux-arm64.tar.gz | tar -C /usr/share/kibana/node/ --strip-components=1 -xzf -
+
 ################################################################################
 # Build stage 1
 # Copy prepared files from the previous stage and complete the image.
