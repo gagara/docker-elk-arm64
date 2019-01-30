@@ -1,13 +1,3 @@
-FROM golang:1.8 AS prep_env2yaml
-
-ADD env2yaml/env2yaml.go .
-
-RUN go get gopkg.in/yaml.v2 && \
-    mkdir env2yaml && \
-    mv env2yaml.go env2yaml/ && \
-    cd env2yaml/ && \
-    go build
-
 # This Dockerfile was generated from templates/Dockerfile.j2
 FROM centos:7
 
@@ -23,9 +13,9 @@ RUN groupadd --gid 1000 logstash && \
       logstash
 
 # Add Logstash itself.
-RUN curl -Lo - https://artifacts.elastic.co/downloads/logstash/logstash-oss-6.5.4.tar.gz | \
+RUN curl -Lo - https://artifacts.elastic.co/downloads/logstash/logstash-oss-6.6.0.tar.gz | \
     tar zxf - -C /usr/share && \
-    mv /usr/share/logstash-6.5.4 /usr/share/logstash && \
+    mv /usr/share/logstash-6.6.0 /usr/share/logstash && \
     chown --recursive logstash:logstash /usr/share/logstash/ && \
     chown -R logstash:root /usr/share/logstash && \
     chmod -R g=u /usr/share/logstash && \
@@ -54,7 +44,7 @@ RUN chmod 0755 /usr/local/bin/docker-entrypoint
 
 USER 1000
 
-COPY --from=prep_env2yaml --chown=1000:0 /go/env2yaml/env2yaml /usr/local/bin/
+ADD env2yaml/env2yaml /usr/local/bin/
 
 EXPOSE 9600 5044
 
@@ -62,7 +52,7 @@ EXPOSE 9600 5044
 LABEL org.label-schema.schema-version="1.0" \
   org.label-schema.vendor="Elastic" \
   org.label-schema.name="logstash" \
-  org.label-schema.version="6.5.4" \
+  org.label-schema.version="6.6.0" \
   org.label-schema.url="https://www.elastic.co/products/logstash" \
   org.label-schema.vcs-url="https://github.com/elastic/logstash-docker" \
 license="Apache-2.0"
