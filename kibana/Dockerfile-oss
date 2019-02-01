@@ -20,6 +20,10 @@ RUN curl -Ls https://artifacts.elastic.co/downloads/kibana/kibana-oss-6.3.1-linu
 ENV ELASTIC_CONTAINER true
 ENV PATH=/usr/share/kibana/bin:$PATH
 
+# replace amd64 node with arm64
+RUN rm -rf /usr/share/kibana/node/* && \
+    curl -sL https://nodejs.org/dist/v8.11.3/node-v8.11.3-linux-arm64.tar.gz | tar -C /usr/share/kibana/node/ --strip-components=1 -xzf -
+
 # Set some Kibana configuration defaults.
 COPY --chown=1000:0 config/kibana-oss.yml /usr/share/kibana/config/kibana.yml
 
