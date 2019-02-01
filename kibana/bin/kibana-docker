@@ -93,19 +93,8 @@ kibana_vars=(
     vega.enableExternalUrls
     xpack.apm.enabled
     xpack.apm.ui.enabled
-    xpack.canvas.enabled
     xpack.graph.enabled
     xpack.grokdebugger.enabled
-    xpack.infra.enabled
-    xpack.infra.query.partitionFactor
-    xpack.infra.query.partitionSize
-    xpack.infra.sources.default.logAlias
-    xpack.infra.sources.default.metricAlias
-    xpack.infra.sources.default.fields.container
-    xpack.infra.sources.default.fields.host
-    xpack.infra.sources.default.fields.pod
-    xpack.infra.sources.default.fields.tiebreaker
-    xpack.infra.sources.default.fields.timestamp
     xpack.ml.enabled
     xpack.monitoring.elasticsearch.password
     xpack.monitoring.elasticsearch.pingTimeout

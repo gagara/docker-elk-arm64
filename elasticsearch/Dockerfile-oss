@@ -17,7 +17,7 @@ FROM centos:7 AS prep_es_files
 ENV PATH /usr/share/elasticsearch/bin:$PATH
 ENV JAVA_HOME /usr/lib/jvm/jre-1.8.0-openjdk
 
-RUN yum install -y java-1.8.0-openjdk-headless
+RUN yum install -y java-1.8.0-openjdk-headless unzip which
 
 RUN groupadd -g 1000 elasticsearch && \
     adduser -u 1000 -g 1000 -d /usr/share/elasticsearch elasticsearch
@@ -27,7 +27,7 @@ WORKDIR /usr/share/elasticsearch
 USER 1000
 
 # Download and extract defined ES version.
-RUN curl -fsSL https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-6.5.4.tar.gz | \
+RUN curl -fsSL https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-6.3.1.tar.gz | \
     tar zx --strip-components=1
 
 RUN set -ex && for esdirs in config data logs; do \
@@ -48,10 +48,6 @@ USER 0
 RUN chown -R elasticsearch:0 . && \
     chmod -R g=u /usr/share/elasticsearch
 
-# custom patch: remove unsupported JVM opts
-RUN mv config/jvm.options config/jvm.options.orig && \
-    cat config/jvm.options.orig | sed -e 's/\(.*UseAVX=.*\)/#\1/' > config/jvm.options
-
 ################################################################################
 # Build stage 1 (the actual elasticsearch image):
 # Copy elasticsearch from stage 0
@@ -62,13 +58,13 @@ FROM centos:7
 
 ENV ELASTIC_CONTAINER true
 
-RUN curl -sL https://github.com/bell-sw/Liberica/releases/download/11.0.2/bellsoft-jdk11.0.2-linux-aarch64.tar.gz | tar -C /opt -zxf -
-ENV JAVA_HOME /opt/jdk-11.0.2
+RUN curl -s https://download.java.net/java/GA/jdk10/10.0.2/19aef61b38124481863b1413dce1855f/13/openjdk-10.0.2_linux-x64_bin.tar.gz | tar -C /opt -zxf -
+ENV JAVA_HOME /opt/jdk-10.0.2
 
 # Replace OpenJDK's built-in CA certificate keystore with the one from the OS
 # vendor. The latter is superior in several ways.
 # REF: https://github.com/elastic/elasticsearch-docker/issues/171
-RUN ln -sf /etc/pki/ca-trust/extracted/java/cacerts /opt/jdk-11.0.2/lib/security/cacerts
+RUN ln -sf /etc/pki/ca-trust/extracted/java/cacerts /opt/jdk-10.0.2/lib/security/cacerts
 
 RUN yum update -y && \
     yum install -y nc unzip wget which && \
@@ -96,7 +92,7 @@ EXPOSE 9200 9300
 LABEL org.label-schema.schema-version="1.0" \
   org.label-schema.vendor="Elastic" \
   org.label-schema.name="elasticsearch" \
-  org.label-schema.version="6.5.4" \
+  org.label-schema.version="6.3.1" \
   org.label-schema.url="https://www.elastic.co/products/elasticsearch" \
   org.label-schema.vcs-url="https://github.com/elastic/elasticsearch-docker" \
 license="Apache-2.0"
