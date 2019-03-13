@@ -17,6 +17,10 @@ RUN curl -Ls https://artifacts.elastic.co/downloads/kibana/kibana-oss-6.6.2-linu
     chmod -R g=u /usr/share/kibana && \
     find /usr/share/kibana -type d -exec chmod g+s {} \;
 
+# replace amd64 node with arm64
+RUN rm -rf /usr/share/kibana/node/* && \
+    curl -sL https://nodejs.org/dist/v10.15.2/node-v10.15.2-linux-arm64.tar.gz | tar -C /usr/share/kibana/node/ --strip-components=1 -xzf -
+
 ENV ELASTIC_CONTAINER true
 ENV PATH=/usr/share/kibana/bin:$PATH
 

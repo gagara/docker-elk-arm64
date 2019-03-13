@@ -16,7 +16,10 @@ FROM centos:7 AS prep_files
 ENV PATH /usr/share/elasticsearch/bin:$PATH
 ENV JAVA_HOME /opt/jdk-11.0.1
 
-RUN curl -s https://download.java.net/java/GA/jdk11/13/GPL/openjdk-11.0.1_linux-x64_bin.tar.gz | tar -C /opt -zxf -
+RUN curl -sL https://github.com/bell-sw/Liberica/releases/download/11.0.1/bellsoft-jdk11.0.1-linux-aarch64.tar.gz | tar -C /opt -zxf -
+RUN curl -sL https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-6.6.2.tar.gz -o /opt/elasticsearch-oss-6.6.2.tar.gz
+RUN curl -sL https://artifacts.elastic.co/downloads/elasticsearch-plugins/ingest-geoip/ingest-geoip-6.6.2.zip -o /opt/ingest-geoip.zip
+RUN curl -sL https://artifacts.elastic.co/downloads/elasticsearch-plugins/ingest-user-agent/ingest-user-agent-6.6.2.zip -o /opt/ingest-user-agent.zip
 
 # Replace OpenJDK's built-in CA certificate keystore with the one from the OS
 # vendor. The latter is superior in several ways.
@@ -30,7 +33,6 @@ RUN groupadd -g 1000 elasticsearch && \
 
 WORKDIR /usr/share/elasticsearch
 
-COPY elasticsearch-oss-6.6.2.tar.gz ingest-user-agent.zip ingest-geoip.zip /opt/
 RUN tar zxf /opt/elasticsearch-oss-6.6.2.tar.gz --strip-components=1
 RUN elasticsearch-plugin install --batch file:///opt/ingest-user-agent.zip
 RUN elasticsearch-plugin install --batch file:///opt/ingest-geoip.zip
@@ -38,6 +40,9 @@ RUN mkdir -p config data logs
 RUN chmod 0775 config data logs
 COPY elasticsearch.yml log4j2.properties config/
 
+# remove unsupported JVM opts in ARM64
+RUN mv config/jvm.options config/jvm.options.orig && \
+    cat config/jvm.options.orig | sed -e 's/\(.*UseAVX=.*\)/#\1/' > config/jvm.options
 
 ################################################################################
 # Build stage 1 (the actual elasticsearch image):
