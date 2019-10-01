@@ -8,27 +8,39 @@ RUN go get gopkg.in/yaml.v2 && \
     cd env2yaml/ && \
     go build
 
+FROM centos:7 AS prep_files
+
+RUN mkdir -p /usr/share/logstash
+
+RUN curl -sL https://artifacts.elastic.co/downloads/logstash/logstash-oss-7.3.2.tar.gz | \
+    tar -C /usr/share/logstash --strip-components=1 -zxf -
+# Bug: https://github.com/elastic/logstash/issues/10888
+RUN yum install -y zip unzip && \
+    mkdir -p /tmp/jruby-complete && \
+    unzip -q /usr/share/logstash/logstash-core/lib/jars/jruby-complete-9.2.7.0.jar -d /tmp/jruby-complete && \
+    cp /tmp/jruby-complete/META-INF/jruby.home/lib/ruby/stdlib/ffi/platform/aarch64-linux/{types,platform}.conf && \
+    cd /tmp/jruby-complete && \
+    zip -qr /tmp/jruby-complete-9.2.7.0.jar * && \
+    cp -f /tmp/jruby-complete-9.2.7.0.jar /usr/share/logstash/logstash-core/lib/jars/jruby-complete-9.2.7.0.jar
+
+
 # This Dockerfile was generated from templates/Dockerfile.j2
 FROM centos:7
 
 # Install Java and the "which" command, which is needed by Logstash's shell
 # scripts.
-RUN yum update -y && yum install -y java-1.8.0-openjdk-devel which && \
+RUN yum update -y && yum install -y java-11-openjdk-devel which && \
     yum clean all
 
 # Provide a non-root user to run the process.
 RUN groupadd --gid 1000 logstash && \
     adduser --uid 1000 --gid 1000 \
-      --home-dir /usr/share/logstash --no-create-home \
+      --home-dir /usr/share/logstash \
       logstash
 
 # Add Logstash itself.
-RUN curl -Lo - https://artifacts.elastic.co/downloads/logstash/logstash-oss-6.6.2.tar.gz | \
-    tar zxf - -C /usr/share && \
-    mv /usr/share/logstash-6.6.2 /usr/share/logstash && \
-    chown --recursive logstash:logstash /usr/share/logstash/ && \
-    chown -R logstash:root /usr/share/logstash && \
-    chmod -R g=u /usr/share/logstash && \
+COPY --from=prep_files --chown=1000:0 /usr/share/logstash /usr/share/logstash
+RUN chmod -R g=u /usr/share/logstash && \
     find /usr/share/logstash -type d -exec chmod g+s {} \; && \
     ln -s /usr/share/logstash /opt/logstash
 
@@ -54,7 +66,7 @@ RUN chmod 0755 /usr/local/bin/docker-entrypoint
 
 USER 1000
 
-COPY --from=prep_env2yaml --chown=1000:0 /go/env2yaml/env2yaml /usr/local/bin/
+COPY --from=prep_env2yaml --chown=logstash:root /go/env2yaml/env2yaml /usr/local/bin/
 
 EXPOSE 9600 5044
 
@@ -62,8 +74,8 @@ EXPOSE 9600 5044
 LABEL org.label-schema.schema-version="1.0" \
   org.label-schema.vendor="Elastic" \
   org.label-schema.name="logstash" \
-  org.label-schema.version="6.6.2" \
+  org.label-schema.version="7.3.2" \
   org.label-schema.url="https://www.elastic.co/products/logstash" \
-  org.label-schema.vcs-url="https://github.com/elastic/logstash-docker" \
+  org.label-schema.vcs-url="https://github.com/elastic/logstash" \
 license="Apache-2.0"
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint"]

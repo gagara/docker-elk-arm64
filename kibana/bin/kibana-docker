@@ -1,4 +1,7 @@
 #!/bin/bash
+#
+# ** THIS IS AN AUTO-GENERATED FILE **
+#
 
 # Run Kibana, using environment variables to set longopts defining Kibana's
 # configuration.
@@ -27,31 +30,12 @@ kibana_vars=(
     elasticsearch.sniffInterval
     elasticsearch.sniffOnConnectionFault
     elasticsearch.sniffOnStart
-    elasticsearch.ssl.ca
-    elasticsearch.ssl.cert
     elasticsearch.ssl.certificate
     elasticsearch.ssl.certificateAuthorities
     elasticsearch.ssl.key
     elasticsearch.ssl.keyPassphrase
     elasticsearch.ssl.verificationMode
-    elasticsearch.ssl.verify
     elasticsearch.startupTimeout
-    elasticsearch.tribe.customHeaders
-    elasticsearch.tribe.password
-    elasticsearch.tribe.pingTimeout
-    elasticsearch.tribe.requestHeadersWhitelist
-    elasticsearch.tribe.requestTimeout
-    elasticsearch.tribe.ssl.ca
-    elasticsearch.tribe.ssl.cert
-    elasticsearch.tribe.ssl.certificate
-    elasticsearch.tribe.ssl.certificateAuthorities
-    elasticsearch.tribe.ssl.key
-    elasticsearch.tribe.ssl.keyPassphrase
-    elasticsearch.tribe.ssl.verificationMode
-    elasticsearch.tribe.ssl.verify
-    elasticsearch.tribe.url
-    elasticsearch.tribe.username
-    elasticsearch.url
     elasticsearch.username
     i18n.locale
     kibana.defaultAppId
@@ -104,19 +88,21 @@ kibana_vars=(
     xpack.infra.enabled
     xpack.infra.query.partitionFactor
     xpack.infra.query.partitionSize
-    xpack.infra.sources.default.logAlias
-    xpack.infra.sources.default.metricAlias
     xpack.infra.sources.default.fields.container
     xpack.infra.sources.default.fields.host
+    xpack.infra.sources.default.fields.message
     xpack.infra.sources.default.fields.pod
     xpack.infra.sources.default.fields.tiebreaker
     xpack.infra.sources.default.fields.timestamp
+    xpack.infra.sources.default.logAlias
+    xpack.infra.sources.default.metricAlias
     xpack.ml.enabled
     xpack.monitoring.elasticsearch.password
     xpack.monitoring.elasticsearch.pingTimeout
-    xpack.monitoring.elasticsearch.url
+    xpack.monitoring.elasticsearch.hosts
     xpack.monitoring.elasticsearch.username
     xpack.monitoring.elasticsearch.ssl.certificateAuthorities
+    xpack.monitoring.elasticsearch.ssl.verificationMode
     xpack.monitoring.enabled
     xpack.monitoring.kibana.collection.enabled
     xpack.monitoring.kibana.collection.interval
@@ -124,6 +110,7 @@ kibana_vars=(
     xpack.monitoring.min_interval_seconds
     xpack.monitoring.node_resolver
     xpack.monitoring.report_stats
+    xpack.monitoring.elasticsearch.pingTimeout
     xpack.monitoring.ui.container.elasticsearch.enabled
     xpack.monitoring.ui.container.logstash.enabled
     xpack.monitoring.ui.enabled
@@ -150,17 +137,23 @@ kibana_vars=(
     xpack.reporting.roles.allow
     xpack.searchprofiler.enabled
     xpack.security.authProviders
+    xpack.security.authc.providers
+    xpack.security.authc.oidc.realm
+    xpack.security.authc.saml.realm
     xpack.security.cookieName
     xpack.security.enabled
     xpack.security.encryptionKey
     xpack.security.secureCookies
     xpack.security.sessionTimeout
-    xpack.xpack_main.telemetry.enabled
+    xpack.security.public.protocol
+    xpack.security.public.hostname
+    xpack.security.public.port
+    xpack.telemetry.enabled
 )
 
 longopts=''
 for kibana_var in ${kibana_vars[*]}; do
-    # 'elasticsearch.url' -> 'ELASTICSEARCH_URL'
+    # 'elasticsearch.hosts' -> 'ELASTICSEARCH_HOSTS'
     env_var=$(echo ${kibana_var^^} | tr . _)
 
     # Indirectly lookup env var values via the name of the var.
