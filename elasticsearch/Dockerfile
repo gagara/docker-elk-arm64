@@ -21,10 +21,9 @@ RUN groupadd -g 1000 elasticsearch &&     adduser -u 1000 -g 1000 -d /usr/share/
 
 WORKDIR /usr/share/elasticsearch
 
-COPY elasticsearch-oss-7.6.2-SNAPSHOT-linux-x86_64.tar.gz /opt/
-
-RUN tar zxf /opt/elasticsearch-oss-7.6.2-SNAPSHOT-linux-x86_64.tar.gz --strip-components=1
+RUN curl -sL https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-7.6.2-no-jdk-linux-x86_64.tar.gz | tar --strip-components=1 -zxf -
 RUN grep ES_DISTRIBUTION_TYPE=tar /usr/share/elasticsearch/bin/elasticsearch-env     && sed -i -e 's/ES_DISTRIBUTION_TYPE=tar/ES_DISTRIBUTION_TYPE=docker/' /usr/share/elasticsearch/bin/elasticsearch-env
+RUN curl -sL http://download.bell-sw.com/java/13.0.2+9/bellsoft-jdk13.0.2+9-linux-aarch64.tar.gz | tar -C /opt -zxf -
 RUN mkdir -p config data logs
 RUN chmod 0775 config data logs
 COPY config/elasticsearch.yml config/log4j2.properties config/
@@ -39,6 +38,7 @@ RUN chmod 0660 config/elasticsearch.yml config/log4j2.properties
 FROM centos:7
 
 ENV ELASTIC_CONTAINER true
+ENV JAVA_HOME /opt/jdk-13.0.2
 
 RUN for iter in {1..10}; do yum update --setopt=tsflags=nodocs -y &&     yum install --setopt=tsflags=nodocs -y nc shadow-utils zip unzip &&     yum clean all && exit_code=0 && break || exit_code=$? && echo "yum error: retry $iter in 10s" && sleep 10; done;     (exit $exit_code)
 
@@ -46,11 +46,12 @@ RUN groupadd -g 1000 elasticsearch &&     adduser -u 1000 -g 1000 -G 0 -d /usr/s
 
 WORKDIR /usr/share/elasticsearch
 COPY --from=builder --chown=1000:0 /usr/share/elasticsearch /usr/share/elasticsearch
+COPY --from=builder --chown=1000:0 /opt/jdk-13.0.2 /opt/jdk-13.0.2
 
 # Replace OpenJDK's built-in CA certificate keystore with the one from the OS
 # vendor. The latter is superior in several ways.
 # REF: https://github.com/elastic/elasticsearch-docker/issues/171
-RUN ln -sf /etc/pki/ca-trust/extracted/java/cacerts /usr/share/elasticsearch/jdk/lib/security/cacerts
+RUN ln -sf /etc/pki/ca-trust/extracted/java/cacerts /opt/jdk-13.0.2/lib/security/cacerts
 
 ENV PATH /usr/share/elasticsearch/bin:$PATH
 

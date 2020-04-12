@@ -7,12 +7,23 @@
 # Extract Kibana and make various file manipulations.
 ################################################################################
 FROM centos:7 AS prep_files
-# Add tar and gzip
-RUN yum update -y && yum install -y tar gzip && yum clean all
-RUN cd /opt && curl --retry 8 -s -L -O https://artifacts.elastic.co/downloads/kibana/kibana-oss-7.6.2-SNAPSHOT-linux-x86_64.tar.gz && cd -
+
+# Install toolchain to build dumb-init
+RUN yum install -y glibc-static gcc make
+
 RUN mkdir /usr/share/kibana
 WORKDIR /usr/share/kibana
-RUN tar --strip-components=1 -zxf /opt/kibana-oss-7.6.2-SNAPSHOT-linux-x86_64.tar.gz
+
+RUN curl -sL https://artifacts.elastic.co/downloads/kibana/kibana-oss-7.6.2-linux-x86_64.tar.gz | tar --strip-components=1 -zxf -
+# replace amd64 node with arm64
+RUN rm -rf /usr/share/kibana/node/* && \
+    curl -sL https://nodejs.org/dist/v10.19.0/node-v10.19.0-linux-arm64.tar.gz | tar -C /usr/share/kibana/node/ --strip-components=1 -xzf -
+
+# compile dumb-init from sources
+RUN mkdir -p /opt/dumb-init
+RUN curl -sL https://github.com/Yelp/dumb-init/archive/v1.2.2.tar.gz | tar -C /opt/dumb-init --strip-components=1 -zxf -
+RUN pushd /opt/dumb-init && make && popd
+
 # Ensure that group permissions are the same as user permissions.
 # This will help when relying on GID-0 to run Kibana, rather than UID-1000.
 # OpenShift does this, for example.
@@ -30,14 +41,11 @@ EXPOSE 5601
 # Add Reporting dependencies.
 RUN yum update -y && yum install -y fontconfig freetype shadow-utils && yum clean all
 
-# Add an init process, check the checksum to make sure it's a match
-RUN curl -L -o /usr/local/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_amd64
-RUN echo "37f2c1f0372a45554f1b89924fbb134fc24c3756efaedf11e07f599494e0eff9  /usr/local/bin/dumb-init" | sha256sum -c -
-RUN chmod +x /usr/local/bin/dumb-init
-
-
 # Bring in Kibana from the initial stage.
 COPY --from=prep_files --chown=1000:0 /usr/share/kibana /usr/share/kibana
+# Bring in dumb-init from the initial stage.
+COPY --from=prep_files --chown=1000:0 /opt/dumb-init/dumb-init  /usr/local/bin/dumb-init
+
 WORKDIR /usr/share/kibana
 RUN ln -s /usr/share/kibana /opt/kibana
 

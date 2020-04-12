@@ -1,3 +1,28 @@
+FROM golang:1.8 AS prep_env2yaml
+
+ADD env2yaml/env2yaml.go .
+
+RUN go get gopkg.in/yaml.v2 && \
+    mkdir env2yaml && \
+    mv env2yaml.go env2yaml/ && \
+    cd env2yaml/ && \
+    go build
+
+FROM centos:7 AS prep_files
+
+RUN mkdir -p /usr/share/logstash
+
+RUN curl -sL https://artifacts.elastic.co/downloads/logstash/logstash-oss-7.6.2.tar.gz | \
+    tar -C /usr/share/logstash --strip-components=1 -zxf -
+# Bug: https://github.com/elastic/logstash/issues/10888
+RUN yum install -y zip unzip && \
+    mkdir -p /tmp/jruby-complete && \
+    unzip -q /usr/share/logstash/logstash-core/lib/jars/jruby-complete-9.2.9.0.jar -d /tmp/jruby-complete && \
+    cp /tmp/jruby-complete/META-INF/jruby.home/lib/ruby/stdlib/ffi/platform/aarch64-linux/{types,platform}.conf && \
+    cd /tmp/jruby-complete && \
+    zip -qr /tmp/jruby-complete-9.2.9.0.jar * && \
+    cp -f /tmp/jruby-complete-9.2.9.0.jar /usr/share/logstash/logstash-core/lib/jars/jruby-complete-9.2.9.0.jar
+
 # This Dockerfile was generated from templates/Dockerfile.j2
 FROM centos:7
 
@@ -13,12 +38,8 @@ RUN groupadd --gid 1000 logstash && \
       logstash
 
 # Add Logstash itself.
-RUN curl -Lo - http://localhost:8000/logstash-oss-7.6.2-SNAPSHOT.tar.gz | \
-    tar zxf - -C /usr/share && \
-    mv /usr/share/logstash-7.6.2-SNAPSHOT /usr/share/logstash && \
-    chown --recursive logstash:logstash /usr/share/logstash/ && \
-    chown -R logstash:root /usr/share/logstash && \
-    chmod -R g=u /usr/share/logstash && \
+COPY --from=prep_files --chown=1000:0 /usr/share/logstash /usr/share/logstash
+RUN chmod -R g=u /usr/share/logstash && \
     find /usr/share/logstash -type d -exec chmod g+s {} \; && \
     ln -s /usr/share/logstash /opt/logstash
 
@@ -36,7 +57,7 @@ ADD pipeline/default.conf pipeline/logstash.conf
 RUN chown --recursive logstash:root config/ pipeline/
 
 # Ensure Logstash gets a UTF-8 locale by default.
-ENV LANG='en_US.UTF-8' LC_ALL='en_US.UTF-8'
+#ENV LANG='en_US.UTF-8' LC_ALL='en_US.UTF-8'
 
 # Place the startup wrapper script.
 ADD bin/docker-entrypoint /usr/local/bin/
@@ -44,7 +65,7 @@ RUN chmod 0755 /usr/local/bin/docker-entrypoint
 
 USER 1000
 
-ADD env2yaml/env2yaml /usr/local/bin/
+COPY --from=prep_env2yaml --chown=logstash:root /go/env2yaml/env2yaml /usr/local/bin/
 
 EXPOSE 9600 5044
 
